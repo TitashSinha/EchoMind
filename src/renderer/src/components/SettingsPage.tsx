@@ -100,9 +100,9 @@ export default function SettingsPage(): JSX.Element {
 
       <section className="card pad form">
         <h2>Models</h2>
-        {field('liveModel', 'Live suggestions', '— low latency matters; gpt-4o-mini recommended')}
-        {field('summaryModel', 'Session summaries', '— quality matters; gpt-4o recommended')}
-        {field('transcribeModel', 'Transcription', '— gpt-4o-mini-transcribe or whisper-1')}
+        {field('liveModel', 'Live suggestions', '— low latency matters; gpt-5.4-mini recommended')}
+        {field('summaryModel', 'Session summaries', '— gpt-5.4-mini recommended (gpt-5.4 for higher quality)')}
+        {field('transcribeModel', 'Transcription', '— whisper-1 recommended')}
         {field('embedModel', 'Embeddings', '— text-embedding-3-small recommended')}
         {field('language', 'Spoken language', '— ISO code like "en", or blank for auto-detect')}
       </section>

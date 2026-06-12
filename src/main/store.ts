@@ -48,9 +48,9 @@ interface SettingsFile {
 }
 
 const DEFAULTS: Omit<SettingsFile, 'apiKeyEnc' | 'apiKeyPlain'> = {
-  liveModel: 'gpt-4o-mini',
-  summaryModel: 'gpt-4o',
-  transcribeModel: 'gpt-4o-mini-transcribe',
+  liveModel: 'gpt-5.4-mini',
+  summaryModel: 'gpt-5.4-mini',
+  transcribeModel: 'whisper-1',
   embedModel: 'text-embedding-3-small',
   language: '',
   overlayPrivacy: true
