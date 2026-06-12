@@ -49,7 +49,7 @@ interface SettingsFile {
 
 const DEFAULTS: Omit<SettingsFile, 'apiKeyEnc' | 'apiKeyPlain'> = {
   liveModel: 'gpt-5.4-mini',
-  summaryModel: 'gpt-5.4-mini',
+  summaryModel: 'gpt-5.4',
   transcribeModel: 'whisper-1',
   embedModel: 'text-embedding-3-small',
   language: '',

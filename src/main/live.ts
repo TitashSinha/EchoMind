@@ -138,18 +138,18 @@ async function generate(): Promise<void> {
   a.generating = true
   broadcast('live:status', getLiveStatus())
   try {
-    const recent = a.segments.slice(-24)
+    const recent = a.segments.slice(-60)
     if (!recent.length) return
     const transcriptTail = recent
       .map((s) => `${s.speaker === 'you' ? 'You' : 'Them'}: ${s.text}`)
       .join('\n')
-      .slice(-4000)
-    const query = recent.slice(-6).map((s) => s.text).join(' ')
+      .slice(-12000)
+    const query = recent.slice(-8).map((s) => s.text).join(' ')
     const docContext = a.meta.spaceId
-      ? (await retrieve(a.meta.spaceId, query, 6))
+      ? (await retrieve(a.meta.spaceId, query, 10))
           .map((t, i) => `[${i + 1}] ${t}`)
           .join('\n---\n')
-          .slice(0, 9000)
+          .slice(0, 18000)
       : ''
     if (active !== a) return
     const system = buildLiveSystemPrompt({
@@ -216,14 +216,13 @@ export async function stopSession(): Promise<SessionRecord | null> {
     const fullTranscript = a.segments
       .map((s) => `${s.speaker === 'you' ? 'You' : 'Them'}: ${s.text}`)
       .join('\n')
-      .slice(0, 48000)
     const settings = getSettings()
     try {
       const out = await chatJson<Partial<SessionOutputs>>({
         system: buildSummaryPrompt(a.meta.mode),
         user: fullTranscript,
         model: settings.summaryModel,
-        maxTokens: 1400
+        maxTokens: 2400
       })
       const merge = (live: string[], post: string[]): string[] => {
         const seen = new Set(post.map((x) => x.toLowerCase()))
@@ -243,7 +242,7 @@ export async function stopSession(): Promise<SessionRecord | null> {
     try {
       const mem = await chatJson<{ memories?: { type?: string; text?: string }[] }>({
         system: buildMemoryPrompt(),
-        user: fullTranscript.slice(0, 24000),
+        user: fullTranscript,
         model: settings.liveModel,
         maxTokens: 500
       })
