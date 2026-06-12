@@ -1,0 +1,12 @@
+﻿node_modules/
+out/
+release/
+dist/
+*.tsbuildinfo
+
+# electron-builder cache
+.electron-builder/
+
+# OS
+.DS_Store
+Thumbs.db

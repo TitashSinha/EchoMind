@@ -1,0 +1,18 @@
+appId: com.echomind.app
+productName: EchoMind
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  - node_modules/pdf-parse/**
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  shortcutName: EchoMind
+publish: null
