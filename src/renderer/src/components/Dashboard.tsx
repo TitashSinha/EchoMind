@@ -42,12 +42,12 @@ export default function Dashboard(): JSX.Element {
         </button>
       </header>
 
-      {settings && !settings.hasApiKey && (
+      {settings && settings.provider === 'openai' && !settings.hasApiKey && (
         <div className="banner warn" onClick={() => nav({ page: 'settings' })} role="button">
           <AlertTriangle size={16} />
           <span>
-            No OpenAI API key configured. Add one in <b>Settings</b> to enable transcription and
-            suggestions.
+            No OpenAI API key configured. Add one in <b>Settings</b>, or switch to the local
+            <b> Ollama</b> provider to run free.
           </span>
         </div>
       )}

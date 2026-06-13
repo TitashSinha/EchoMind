@@ -15,13 +15,25 @@ export const MODE_LABELS: Record<SessionMode, string> = {
   custom: 'Custom'
 }
 
+export type AiProvider = 'openai' | 'ollama'
+
 export interface AppSettings {
   hasApiKey: boolean
   keyEncrypted: boolean
+  /** Which backend serves chat / embeddings / vision. 'ollama' = fully local, no key. */
+  provider: AiProvider
   liveModel: string
   summaryModel: string
   transcribeModel: string
   embedModel: string
+  /** Base URL of the local Ollama server. */
+  ollamaUrl: string
+  /** Ollama model used for live suggestions and summaries. */
+  ollamaModel: string
+  /** Ollama model used to embed documents for retrieval. */
+  ollamaEmbedModel: string
+  /** Ollama vision model used for screenshot analysis. */
+  ollamaVisionModel: string
   /** ISO-639-1 code passed to the transcription API. Empty string = auto-detect. */
   language: string
   /** When true the overlay window is excluded from screen capture / screen shares. */

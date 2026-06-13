@@ -74,7 +74,7 @@ function SetupForm(props: {
     setError('')
     try {
       const settings = await api.getSettings()
-      if (!settings.hasApiKey) {
+      if (settings.provider === 'openai' && !settings.hasApiKey) {
         throw new Error('Add your OpenAI API key in Settings before starting a session.')
       }
       if (!useMic && !useSystem) {

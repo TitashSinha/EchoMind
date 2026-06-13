@@ -1,7 +1,7 @@
 import { app, safeStorage } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { AppSettings } from '@shared/types'
+import type { AiProvider, AppSettings } from '@shared/types'
 
 let cachedKey: string | null | undefined
 
@@ -39,19 +39,29 @@ export function newId(prefix: string): string {
 interface SettingsFile {
   apiKeyEnc?: string
   apiKeyPlain?: string
+  provider: AiProvider
   liveModel: string
   summaryModel: string
   transcribeModel: string
   embedModel: string
+  ollamaUrl: string
+  ollamaModel: string
+  ollamaEmbedModel: string
+  ollamaVisionModel: string
   language: string
   overlayPrivacy: boolean
 }
 
 const DEFAULTS: Omit<SettingsFile, 'apiKeyEnc' | 'apiKeyPlain'> = {
+  provider: 'openai',
   liveModel: 'gpt-5.4-mini',
   summaryModel: 'gpt-5.4',
   transcribeModel: 'whisper-1',
   embedModel: 'text-embedding-3-small',
+  ollamaUrl: 'http://localhost:11434',
+  ollamaModel: 'llama3.2',
+  ollamaEmbedModel: 'nomic-embed-text',
+  ollamaVisionModel: 'llama3.2-vision',
   language: '',
   overlayPrivacy: true
 }
@@ -102,10 +112,15 @@ export function getSettings(): AppSettings {
   return {
     hasApiKey: !!getApiKey(),
     keyEncrypted: !!s.apiKeyEnc,
+    provider: s.provider,
     liveModel: s.liveModel,
     summaryModel: s.summaryModel,
     transcribeModel: s.transcribeModel,
     embedModel: s.embedModel,
+    ollamaUrl: s.ollamaUrl,
+    ollamaModel: s.ollamaModel,
+    ollamaEmbedModel: s.ollamaEmbedModel,
+    ollamaVisionModel: s.ollamaVisionModel,
     language: s.language,
     overlayPrivacy: s.overlayPrivacy,
     dataDir: dataDir()
@@ -115,11 +130,22 @@ export function getSettings(): AppSettings {
 export function updateSettings(patch: Partial<AppSettings> & { apiKey?: string }): AppSettings {
   if (patch.apiKey !== undefined) setApiKey(patch.apiKey)
   const s = readSettingsFile()
-  const stringKeys = ['liveModel', 'summaryModel', 'transcribeModel', 'embedModel', 'language'] as const
+  const stringKeys = [
+    'liveModel',
+    'summaryModel',
+    'transcribeModel',
+    'embedModel',
+    'ollamaUrl',
+    'ollamaModel',
+    'ollamaEmbedModel',
+    'ollamaVisionModel',
+    'language'
+  ] as const
   for (const k of stringKeys) {
     const v = patch[k]
     if (typeof v === 'string') s[k] = v
   }
+  if (patch.provider === 'openai' || patch.provider === 'ollama') s.provider = patch.provider
   if (typeof patch.overlayPrivacy === 'boolean') s.overlayPrivacy = patch.overlayPrivacy
   writeJson(settingsPath(), s)
   return getSettings()
