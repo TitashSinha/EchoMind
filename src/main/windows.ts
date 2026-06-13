@@ -78,6 +78,11 @@ export function createWindows(): BrowserWindow {
   })
   overlayWindow.setAlwaysOnTop(true, 'screen-saver')
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  // Windows drops the WDA_EXCLUDEFROMCAPTURE display-affinity flag across hide/show
+  // cycles and while the window is hidden, so re-apply it every time the overlay
+  // becomes visible and after each (re)load — not just once at creation.
+  overlayWindow.on('show', () => applyOverlayPrivacy())
+  overlayWindow.webContents.on('did-finish-load', () => applyOverlayPrivacy())
   applyOverlayPrivacy()
   // Hide instead of destroying so it can be re-shown instantly mid-session.
   overlayWindow.on('close', (e) => {
@@ -103,6 +108,11 @@ export function toggleOverlay(show?: boolean): boolean {
   if (target) {
     // showInactive keeps focus on the user's meeting app.
     overlayWindow.showInactive()
+    // Re-assert capture protection now that the HWND is visible; the 'show'
+    // event also fires this, but Windows occasionally needs a second pass once
+    // the window has fully surfaced.
+    applyOverlayPrivacy()
+    setTimeout(applyOverlayPrivacy, 120)
   } else {
     overlayWindow.hide()
   }
@@ -112,6 +122,7 @@ export function toggleOverlay(show?: boolean): boolean {
 /** Exclude the overlay from screen capture so it never leaks into a screen share. */
 export function applyOverlayPrivacy(): void {
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    overlayWindow.setContentProtection(getSettings().overlayPrivacy)
+    const on = getSettings().overlayPrivacy
+    overlayWindow.setContentProtection(on)
   }
 }
