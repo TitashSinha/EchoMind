@@ -5,6 +5,7 @@ import { getSettings } from './store'
 let mainWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
 let quitting = false
+let privacyTimer: ReturnType<typeof setInterval> | null = null
 
 export function setQuitting(): void {
   quitting = true
@@ -82,11 +83,15 @@ export function createWindows(): BrowserWindow {
   })
   overlayWindow.setAlwaysOnTop(true, 'screen-saver')
   overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-  // Windows drops the WDA_EXCLUDEFROMCAPTURE display-affinity flag across hide/show
-  // cycles and while the window is hidden, so re-apply it every time the overlay
-  // becomes visible and after each (re)load — not just once at creation.
-  overlayWindow.on('show', () => applyOverlayPrivacy())
-  overlayWindow.webContents.on('did-finish-load', () => applyOverlayPrivacy())
+  // Windows can clear the WDA_EXCLUDEFROMCAPTURE display-affinity flag across
+  // show/restore/move transitions, briefly exposing the overlay to screenshots
+  // and recordings. Re-apply on every relevant event AND keep a cheap watchdog
+  // running while it's visible so protection is continuous, not best-effort.
+  overlayWindow.on('show', startPrivacyWatch)
+  overlayWindow.on('hide', stopPrivacyWatch)
+  overlayWindow.on('restore', applyOverlayPrivacy)
+  overlayWindow.on('move', applyOverlayPrivacy)
+  overlayWindow.webContents.on('did-finish-load', applyOverlayPrivacy)
   applyOverlayPrivacy()
   // Hide instead of destroying so it can be re-shown instantly mid-session.
   overlayWindow.on('close', (e) => {
@@ -110,18 +115,17 @@ export function toggleOverlay(show?: boolean): boolean {
   if (!overlayWindow || overlayWindow.isDestroyed()) return false
   const target = show ?? !overlayWindow.isVisible()
   if (target) {
-    // showInactive keeps focus on the user's meeting app.
+    // showInactive keeps focus on the user's meeting app. The 'show' event
+    // starts the privacy watchdog; call it here too so protection is asserted
+    // before the window can be painted into any capture.
     overlayWindow.showInactive()
-    // Re-assert capture protection now that the HWND is visible; the 'show'
-    // event also fires this, but Windows occasionally needs a second pass once
-    // the window has fully surfaced.
-    applyOverlayPrivacy()
-    setTimeout(applyOverlayPrivacy, 120)
+    startPrivacyWatch()
     // Collapse the main control window so only the in-meeting HUD is on screen —
     // having both visible makes it unclear where to look during a conversation.
     if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize()
   } else {
     overlayWindow.hide()
+    stopPrivacyWatch()
     // Bring the control window back (e.g. to show the session summary).
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore()
@@ -131,10 +135,28 @@ export function toggleOverlay(show?: boolean): boolean {
   return target
 }
 
-/** Exclude the overlay from screen capture so it never leaks into a screen share. */
+/**
+ * Exclude the overlay from ALL screen capture — recordings, screen shares, and
+ * screenshots (Print Screen / Snipping Tool) — via the WDA_EXCLUDEFROMCAPTURE
+ * window display affinity. Reads the live setting so toggling it takes effect
+ * within one watchdog tick.
+ */
 export function applyOverlayPrivacy(): void {
   if (overlayWindow && !overlayWindow.isDestroyed()) {
-    const on = getSettings().overlayPrivacy
-    overlayWindow.setContentProtection(on)
+    overlayWindow.setContentProtection(getSettings().overlayPrivacy)
+  }
+}
+
+/** Continuously re-assert capture protection while the overlay is on screen. */
+function startPrivacyWatch(): void {
+  applyOverlayPrivacy()
+  if (privacyTimer) return
+  privacyTimer = setInterval(applyOverlayPrivacy, 500)
+}
+
+function stopPrivacyWatch(): void {
+  if (privacyTimer) {
+    clearInterval(privacyTimer)
+    privacyTimer = null
   }
 }
