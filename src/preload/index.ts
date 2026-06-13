@@ -33,6 +33,7 @@ const api: EchoBridge = {
   stopSession: () => ipcRenderer.invoke('live:stop'),
   liveChunk: (speaker: Speaker, data: ArrayBuffer) =>
     ipcRenderer.invoke('live:chunk', speaker, data),
+  liveText: (speaker: Speaker, text: string) => ipcRenderer.invoke('live:text', speaker, text),
   getLiveSnapshot: () => ipcRenderer.invoke('live:snapshot'),
 
   listSessions: () => ipcRenderer.invoke('sessions:list'),

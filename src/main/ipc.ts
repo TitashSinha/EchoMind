@@ -9,7 +9,7 @@ import {
   reindexSpace,
   removeDocument
 } from './spaces'
-import { addChunk, getLiveSnapshot, startSession, stopSession } from './live'
+import { addChunk, addText, getLiveSnapshot, startSession, stopSession } from './live'
 import {
   deleteSession,
   getSession,
@@ -65,6 +65,7 @@ export function registerIpc(): void {
   ipcMain.handle('live:chunk', (_e, speaker: Speaker, data: ArrayBuffer) => {
     addChunk(speaker, Buffer.from(data))
   })
+  ipcMain.handle('live:text', (_e, speaker: Speaker, text: string) => addText(speaker, text))
   ipcMain.handle('live:snapshot', () => getLiveSnapshot())
 
   ipcMain.handle('sessions:list', () => listSessions())

@@ -6,6 +6,7 @@ import {
   HelpCircle,
   Lightbulb,
   MessageSquare,
+  Loader2,
   Mic,
   MonitorSpeaker,
   PictureInPicture2,
@@ -87,7 +88,12 @@ function SetupForm(props: {
         spaceId: spaceId || undefined
       })
       try {
-        await liveAudio.start({ mic: useMic, system: useSystem })
+        await liveAudio.start({
+          mic: useMic,
+          system: useSystem,
+          localStt: settings.provider === 'ollama',
+          language: settings.language
+        })
       } catch (e) {
         await api.stopSession()
         throw e
@@ -298,6 +304,15 @@ function ActiveSession(props: { status: LiveStatus; title: string }): JSX.Elemen
         <div className="banner warn">
           <AlertTriangle size={16} />
           <span>{a.error}</span>
+        </div>
+      )}
+      {a.sttLoading && (
+        <div className="banner info">
+          <Loader2 size={16} className="spin" />
+          <span>
+            Loading local speech model… first run downloads it (~75 MB), then it's cached and works
+            fully offline.
+          </span>
         </div>
       )}
 

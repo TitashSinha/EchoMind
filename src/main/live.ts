@@ -97,6 +97,22 @@ function isNoise(t: string): boolean {
   return t.length < 2 || junk.has(t.toLowerCase().trim())
 }
 
+/** Commit a transcribed segment to the active session and react to it. */
+function ingest(a: ActiveSession, speaker: Speaker, text: string, tAt: number): void {
+  const clean = text.trim()
+  if (active !== a || !clean || isNoise(clean)) return
+  const seg: TranscriptSegment = { id: newId('t'), t: tAt, speaker, text: clean }
+  a.segments.push(seg)
+  broadcast('live:segment', seg)
+  // Only react when the OTHER party speaks. Regenerating while the user is
+  // mid-answer would swap out the suggestion they're actively reading aloud,
+  // which is jarring. The user's own speech still feeds context for the next
+  // generation — it just doesn't trigger one. A short delay lets the other
+  // party finish their thought before we respond.
+  if (speaker === 'them') scheduleGenerate(1500)
+}
+
+/** Cloud path: transcribe an audio chunk (OpenAI), then ingest it. */
 export function addChunk(speaker: Speaker, data: Buffer): void {
   if (!active) return
   const a = active
@@ -105,22 +121,19 @@ export function addChunk(speaker: Speaker, data: Buffer): void {
     if (active !== a) return
     let text = ''
     try {
-      text = (await transcribe(data)).trim()
+      text = await transcribe(data)
     } catch (err) {
       broadcast('live:error', `Transcription failed: ${err instanceof Error ? err.message : err}`)
       return
     }
-    if (active !== a || !text || isNoise(text)) return
-    const seg: TranscriptSegment = { id: newId('t'), t: tAt, speaker, text }
-    a.segments.push(seg)
-    broadcast('live:segment', seg)
-    // Only react when the OTHER party speaks. Regenerating while the user is
-    // mid-answer would swap out the suggestion they're actively reading aloud,
-    // which is jarring. The user's own speech still feeds context for the next
-    // generation — it just doesn't trigger one. A short delay lets the other
-    // party finish their thought before we respond.
-    if (speaker === 'them') scheduleGenerate(1500)
+    ingest(a, speaker, text, tAt)
   })
+}
+
+/** Local path: a segment already transcribed in the renderer (Whisper via transformers.js). */
+export function addText(speaker: Speaker, text: string): void {
+  if (!active) return
+  ingest(active, speaker, text, Date.now() - active.startMs)
 }
 
 function scheduleGenerate(delay: number): void {

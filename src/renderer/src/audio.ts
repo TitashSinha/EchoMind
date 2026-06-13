@@ -1,4 +1,5 @@
 import { api } from './api'
+import { ensureStt, transcribeLocal } from './localStt'
 import type { Speaker } from '@shared/types'
 
 export interface AudioState {
@@ -7,6 +8,8 @@ export interface AudioState {
   system: boolean
   micLevel: number
   sysLevel: number
+  /** True while the local Whisper model is downloading/initializing. */
+  sttLoading?: boolean
   error?: string
 }
 
@@ -26,6 +29,11 @@ class LiveAudio {
   state: AudioState = { running: false, mic: false, system: false, micLevel: 0, sysLevel: 0 }
   private stops: (() => void)[] = []
   private listeners = new Set<() => void>()
+  /** When true, transcription runs locally (renderer Whisper) instead of via the main process / OpenAI. */
+  private localStt = false
+  private language = ''
+  /** Serializes local transcription so the model processes one chunk at a time. */
+  private sttQueue: Promise<void> = Promise.resolve()
 
   subscribe(fn: () => void): () => void {
     this.listeners.add(fn)
@@ -36,10 +44,37 @@ class LiveAudio {
     for (const l of this.listeners) l()
   }
 
-  async start(opts: { mic: boolean; system: boolean }): Promise<void> {
+  async start(opts: {
+    mic: boolean
+    system: boolean
+    localStt?: boolean
+    language?: string
+  }): Promise<void> {
     if (this.state.running) return
+    this.localStt = !!opts.localStt
+    this.language = opts.language || ''
+    this.sttQueue = Promise.resolve()
     this.state = { running: false, mic: false, system: false, micLevel: 0, sysLevel: 0 }
     const errors: string[] = []
+
+    if (this.localStt) {
+      // Begin loading the local speech model right away (first run downloads it).
+      this.state.sttLoading = true
+      this.emit()
+      void ensureStt((r) => {
+        this.state.sttLoading = r < 1
+        this.emit()
+      })
+        .then(() => {
+          this.state.sttLoading = false
+          this.emit()
+        })
+        .catch((e) => {
+          this.state.sttLoading = false
+          this.state.error = `Local speech model failed to load: ${e instanceof Error ? e.message : e}`
+          this.emit()
+        })
+    }
 
     if (opts.mic) {
       try {
@@ -131,7 +166,19 @@ class LiveAudio {
         if (wasVoiced && parts.length) {
           const blob = new Blob(parts, { type: 'audio/webm' })
           if (blob.size > MIN_BLOB_BYTES) {
-            void blob.arrayBuffer().then((ab) => api.liveChunk(speaker, ab).catch(() => {}))
+            if (this.localStt) {
+              // Transcribe locally, serialized so the model handles one chunk at a time.
+              this.sttQueue = this.sttQueue.then(async () => {
+                try {
+                  const text = await transcribeLocal(blob, this.language)
+                  if (text) await api.liveText(speaker, text)
+                } catch {
+                  /* drop this chunk; the next window will try again */
+                }
+              })
+            } else {
+              void blob.arrayBuffer().then((ab) => api.liveChunk(speaker, ab).catch(() => {}))
+            }
           }
         }
       }

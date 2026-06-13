@@ -37,6 +37,8 @@ export interface EchoBridge {
   startSession(opts: StartSessionOptions): Promise<SessionMeta>
   stopSession(): Promise<SessionRecord | null>
   liveChunk(speaker: Speaker, data: ArrayBuffer): Promise<void>
+  /** Submit a segment already transcribed locally in the renderer (Ollama / local mode). */
+  liveText(speaker: Speaker, text: string): Promise<void>
   getLiveSnapshot(): Promise<LiveSnapshot>
 
   listSessions(): Promise<SessionMeta[]>
