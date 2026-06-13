@@ -1082,6 +1082,24 @@ input[type='checkbox'] {
   height: 24px;
 }
 
+.overlay-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--red);
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  transition: background 0.15s;
+}
+
+.overlay-end:hover {
+  background: rgba(248, 113, 113, 0.22);
+}
+
 .overlay-body {
   flex: 1;
   overflow-y: auto;

@@ -245,6 +245,10 @@ function ActiveSession(props: { status: LiveStatus; title: string }): JSX.Elemen
     if (rec) nav({ page: 'session', id: rec.id })
   }
 
+  // The overlay's End button broadcasts here so audio teardown runs in this
+  // (the capturing) renderer rather than the overlay's.
+  useEffect(() => api.on('live:end-requested', () => void end()), [])
+
   const a = liveAudio.state
 
   return (

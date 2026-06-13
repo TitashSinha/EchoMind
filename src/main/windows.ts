@@ -40,7 +40,11 @@ export function createWindows(): BrowserWindow {
     webPreferences: {
       preload: preloadPath(),
       contextIsolation: true,
-      sandbox: false
+      sandbox: false,
+      // The audio-capture loop (cycling MediaRecorder + level meter) lives in
+      // this window's renderer and must keep running at full speed even when the
+      // window is minimized during a session — so disable timer throttling.
+      backgroundThrottling: false
     }
   })
   mainWindow.once('ready-to-show', () => mainWindow?.show())
@@ -113,8 +117,16 @@ export function toggleOverlay(show?: boolean): boolean {
     // the window has fully surfaced.
     applyOverlayPrivacy()
     setTimeout(applyOverlayPrivacy, 120)
+    // Collapse the main control window so only the in-meeting HUD is on screen —
+    // having both visible makes it unclear where to look during a conversation.
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize()
   } else {
     overlayWindow.hide()
+    // Bring the control window back (e.g. to show the session summary).
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
   }
   return target
 }

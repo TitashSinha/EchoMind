@@ -17,6 +17,7 @@ export type LiveChannel =
   | 'live:status'
   | 'live:ended'
   | 'live:error'
+  | 'live:end-requested'
 
 /** API surface exposed to the renderer via contextBridge as `window.echomind`. */
 export interface EchoBridge {
@@ -49,6 +50,8 @@ export interface EchoBridge {
   deleteMemory(id: string): Promise<MemoryEntry[]>
 
   toggleOverlay(show?: boolean): Promise<boolean>
+  /** Ask the main control window to end the active session (used by the overlay). */
+  requestEndSession(): Promise<void>
 
   on(channel: LiveChannel, cb: (payload: unknown) => void): () => void
 }

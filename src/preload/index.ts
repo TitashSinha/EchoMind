@@ -7,7 +7,8 @@ const LIVE_CHANNELS = new Set<LiveChannel>([
   'live:suggestions',
   'live:status',
   'live:ended',
-  'live:error'
+  'live:error',
+  'live:end-requested'
 ])
 
 const api: EchoBridge = {
@@ -45,6 +46,7 @@ const api: EchoBridge = {
   deleteMemory: (id: string) => ipcRenderer.invoke('memory:delete', id),
 
   toggleOverlay: (show?: boolean) => ipcRenderer.invoke('overlay:toggle', show),
+  requestEndSession: () => ipcRenderer.invoke('overlay:endSession'),
 
   on: (channel: LiveChannel, cb: (payload: unknown) => void) => {
     if (!LIVE_CHANNELS.has(channel)) throw new Error(`Unknown channel: ${channel}`)

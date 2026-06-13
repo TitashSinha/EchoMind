@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Brain, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Brain, ChevronDown, ChevronUp, Square, X } from 'lucide-react'
 import { api } from '../api'
 import { fmtClock } from '../util'
 import type { LiveStatus, SuggestionSet, TranscriptSegment } from '@shared/types'
@@ -50,10 +50,27 @@ export default function Overlay(): JSX.Element {
           </span>
         )}
         <span className="spacer" />
-        <button className="icon-btn nodrag" onClick={() => setCollapsed((c) => !c)}>
+        {status.active && (
+          <button
+            className="overlay-end nodrag"
+            onClick={() => void api.requestEndSession()}
+            title="End session"
+          >
+            <Square size={11} /> End
+          </button>
+        )}
+        <button
+          className="icon-btn nodrag"
+          onClick={() => setCollapsed((c) => !c)}
+          title={collapsed ? 'Expand' : 'Collapse'}
+        >
           {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
-        <button className="icon-btn nodrag" onClick={() => void api.toggleOverlay(false)}>
+        <button
+          className="icon-btn nodrag"
+          onClick={() => void api.toggleOverlay(false)}
+          title="Hide overlay"
+        >
           <X size={14} />
         </button>
       </div>

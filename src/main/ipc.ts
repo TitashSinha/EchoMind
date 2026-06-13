@@ -18,7 +18,7 @@ import {
   searchSessions
 } from './sessions'
 import { addMemory, deleteMemory, listMemory } from './memory'
-import { applyOverlayPrivacy, getMainWindow, toggleOverlay } from './windows'
+import { applyOverlayPrivacy, broadcast, getMainWindow, toggleOverlay } from './windows'
 import type { AppSettings, MemoryType, Speaker, StartSessionOptions } from '@shared/types'
 
 export function registerIpc(): void {
@@ -78,4 +78,7 @@ export function registerIpc(): void {
   ipcMain.handle('memory:delete', (_e, id: string) => deleteMemory(id))
 
   ipcMain.handle('overlay:toggle', (_e, show?: boolean) => toggleOverlay(show))
+  // The overlay can't tear down audio itself (capture lives in the main
+  // window's renderer), so it asks the main window to run its own end flow.
+  ipcMain.handle('overlay:endSession', () => broadcast('live:end-requested', null))
 }

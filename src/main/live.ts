@@ -114,8 +114,12 @@ export function addChunk(speaker: Speaker, data: Buffer): void {
     const seg: TranscriptSegment = { id: newId('t'), t: tAt, speaker, text }
     a.segments.push(seg)
     broadcast('live:segment', seg)
-    // React quickly when the other party speaks; lazily when only the user does.
-    scheduleGenerate(speaker === 'them' ? 900 : 4000)
+    // Only react when the OTHER party speaks. Regenerating while the user is
+    // mid-answer would swap out the suggestion they're actively reading aloud,
+    // which is jarring. The user's own speech still feeds context for the next
+    // generation — it just doesn't trigger one. A short delay lets the other
+    // party finish their thought before we respond.
+    if (speaker === 'them') scheduleGenerate(1500)
   })
 }
 
