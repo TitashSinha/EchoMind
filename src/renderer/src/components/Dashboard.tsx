@@ -27,12 +27,14 @@ export default function Dashboard(): JSX.Element {
   }, [])
 
   const docCount = spaces.reduce((n, s) => n + s.docs.length, 0)
+  const hr = new Date().getHours()
+  const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
     <div className="page">
       <header className="page-head">
         <div>
-          <h1>Dashboard</h1>
+          <h1>{greeting}</h1>
           <p className="muted">Your personal intelligence layer for professional conversations.</p>
         </div>
         <button className="btn btn-primary" onClick={() => nav({ page: 'live' })}>
@@ -52,24 +54,40 @@ export default function Dashboard(): JSX.Element {
 
       <div className="stat-grid">
         <button className="stat-card" onClick={() => nav({ page: 'spaces' })}>
-          <Library size={18} />
-          <b>{spaces.length}</b>
-          <span>Knowledge spaces</span>
+          <span className="stat-icon">
+            <Library size={18} />
+          </span>
+          <div className="stat-meta">
+            <b>{spaces.length}</b>
+            <span>Knowledge spaces</span>
+          </div>
         </button>
         <button className="stat-card" onClick={() => nav({ page: 'spaces' })}>
-          <FileText size={18} />
-          <b>{docCount}</b>
-          <span>Documents</span>
+          <span className="stat-icon">
+            <FileText size={18} />
+          </span>
+          <div className="stat-meta">
+            <b>{docCount}</b>
+            <span>Documents</span>
+          </div>
         </button>
         <button className="stat-card" onClick={() => nav({ page: 'sessions' })}>
-          <History size={18} />
-          <b>{sessions.length}</b>
-          <span>Sessions</span>
+          <span className="stat-icon">
+            <History size={18} />
+          </span>
+          <div className="stat-meta">
+            <b>{sessions.length}</b>
+            <span>Sessions</span>
+          </div>
         </button>
         <button className="stat-card" onClick={() => nav({ page: 'memory' })}>
-          <Brain size={18} />
-          <b>{memory.length}</b>
-          <span>Memory entries</span>
+          <span className="stat-icon">
+            <Brain size={18} />
+          </span>
+          <div className="stat-meta">
+            <b>{memory.length}</b>
+            <span>Memory entries</span>
+          </div>
         </button>
       </div>
 
